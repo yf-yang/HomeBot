@@ -1,0 +1,1 @@
+"""Human follow application skeleton."""

@@ -1,0 +1,1 @@
+"""Camera driver interface skeleton."""

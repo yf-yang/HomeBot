@@ -1,0 +1,5 @@
+[build-system]
+requires = ["setuptools>=60.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+# project metadata is provided in setup.py for editable installs

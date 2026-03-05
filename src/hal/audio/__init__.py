@@ -1,0 +1,1 @@
+"""Audio driver interface skeleton."""
