@@ -1,0 +1,1 @@
+"""Motion service skeleton."""

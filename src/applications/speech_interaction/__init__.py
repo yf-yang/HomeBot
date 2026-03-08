@@ -1,1 +1,0 @@
-"""Speech interaction application skeleton."""
