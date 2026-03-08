@@ -9,6 +9,8 @@ setup(
     install_requires=[
         "pyzmq",
         "opencv-python",
+        "ftservo-python-sdk",
+        "pyserial",
     ],
     include_package_data=True,
 )

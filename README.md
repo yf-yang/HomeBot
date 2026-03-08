@@ -1,28 +1,65 @@
 # HomeBot
 
-HomeBot 是一个面向家庭场景的轻量级机器人项目，包含硬件设计和软件实现。
+HomeBot 是一个面向家庭场景的轻量级机器人项目，采用 **分层模块化架构** 和 **ZeroMQ** 通信总线，支持手机遥控、语音交互、模仿学习、人跟随等多种应用。
 
+## 系统架构
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                        Application Layer                      │
+│  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐       │
+│  │ Remote   │ │  Voice   │ │Imitation │ │  Human   │       │
+│  │ Control  │ │Interaction│ │Learning │ │  Follow  │       │
+│  └────┬─────┘ └────┬─────┘ └────┬─────┘ └────┬─────┘       │
+└───────┼────────────┼────────────┼────────────┼──────────────┘
+        │            │            │            │
+        └────────────┴──────┬─────┴────────────┘
+                            │ ZeroMQ
+┌───────────────────────────┼─────────────────────────────────┐
+│                      Service Layer                            │
+│  ┌──────────────┐ ┌──────┴──────┐ ┌──────────────┐          │
+│  │ Motion       │ │   Vision     │ │   Speech     │          │
+│  │ Service      │ │   Service    │ │   Service    │          │
+│  │(Chassis+Arm) │ │(Camera Pub)  │ │              │          │
+│  └──────┬───────┘ └──────┬──────┘ └──────┬───────┘          │
+└─────────┼────────────────┼───────────────┼──────────────────┘
+          │                │               │
+          └────────────────┼───────────────┘
+                           │
+┌──────────────────────────┼──────────────────────────────────┐
+│                     HAL (Hardware Abstraction Layer)          │
+│  ┌──────────┐ ┌──────────┼──┐ ┌──────────┐ ┌──────────┐     │
+│  │ Chassis  │ │   Arm    │  │ │  Camera  │ │  Audio   │     │
+│  │  Driver  │ │  Driver  │  │ │  Driver  │ │  Driver  │     │
+│  └──────────┘ └──────────┘  │ └──────────┘ └──────────┘     │
+└─────────────────────────────┴─────────────────────────────────┘
+```
 
 ## 项目结构
 
 ```
 homebot/
-├── docs/                      # 文档
+├── docs/                      # 文档 (中文)
 ├── hardware/                  # 硬件设计文件（SolidWorks, STL）
 │   └── structure/
 ├── software/                  # 软件代码
-│   ├── src/                   # 源代码
+│   ├── src/
 │   │   ├── common/            # 公共工具、消息定义、配置类
-│   │   ├── configs/           # 运行时配置
-│   │   ├── applications/      # 应用层模块（遥控、语音、跟随等）
-│   │   ├── services/          # 服务层（运动、视觉、语音等）
-│   │   │   └── chassis_arbiter/   # 底盘控制仲裁服务
-│   │   │       └── control_sources/  # 控制源客户端（web/voice/auto/emergency）
-│   │   ├── hal/               # 硬件抽象层（摄像头、底盘、机械臂、音频）
-│   │   │   └── chassis/
+│   │   ├── configs/           # 运行时配置 (config.py)
+│   │   ├── applications/      # 应用层
+│   │   │   └── remote_control/    # 网页遥控端 (含视频流)
+│   │   ├── services/          # 服务层
+│   │   │   ├── motion_service/    # 底盘控制服务
+│   │   │   │   └── chassis_service.py  # 带紧急停止锁定
+│   │   │   └── vision_service/    # 视觉服务 (图像采集发布)
+│   │   ├── hal/               # 硬件抽象层
+│   │   │   ├── camera/        # 摄像头驱动
+│   │   │   └── chassis/       # 底盘驱动
 │   │   └── tests/             # 测试代码
 │   ├── models/                # 机器学习模型
 │   ├── tools/                 # 数据采集、训练脚本
+│   ├── start_system.bat       # 一键启动系统
+│   ├── start_vision.bat       # 启动视觉服务
 │   └── run_tests.py           # 自动化测试脚本
 ├── requirements.txt           # Python 依赖
 ├── pyproject.toml             # 构建系统配置
@@ -32,12 +69,13 @@ homebot/
 
 ## 特性
 
-- 纯Python实现，轻松跨平台，笔记本、树莓派等设备均可运行
-- 采用分层模块化架构、ZeroMQ 作为通信总线
-- 支持多种应用：手机遥控、语音交互、模仿学习、人跟随
-- 硬件抽象层可适配不同传感器与执行器
-- Python 配置类和 JSON 配置模板方便部署
-- 兼容lerobot框架下的模仿学习、VLA算法（待开发）
+- **纯 Python 实现**，轻松跨平台（Windows、Linux、Mac、树莓派）
+- **ZeroMQ 通信总线**，低延迟 (~1MB vs ROS2 ~1GB)
+- **网页遥控端**，支持手机/平板/PC，实时视频流显示
+- **紧急停止锁定**，触发后需手动归位解锁，确保安全
+- **一键启动脚本**，自动检查端口占用，启动所有服务
+- **硬件抽象层**，可适配不同传感器与执行器
+- **分层模块化**，易于扩展新功能
 
 ## 安装
 
@@ -54,20 +92,148 @@ pip install -r requirements.txt
 
 ## 快速开始
 
-todo.
+### 方式一：一键启动（推荐）
+
+```bash
+cd software
+start_system.bat
+```
+
+这会启动三个服务：
+- **底盘服务** (ZeroMQ: tcp://127.0.0.1:5556)
+- **视觉服务** (Camera: tcp://127.0.0.1:5560)
+- **Web 控制端** (Flask: http://0.0.0.0:5000)
+
+启动时会检查端口占用，如有占用会提示处理。
+
+### 方式二：手动启动（分窗口）
+
+**窗口 1 - 底盘服务：**
+```bash
+cd software/src
+python -m services.motion_service.chassis_service
+```
+
+**窗口 2 - 视觉服务：**
+```bash
+cd software/src
+python -m services.vision_service
+# 或调试模式：python -m services.vision_service --display
+```
+
+**窗口 3 - Web 控制端：**
+```bash
+cd software/src
+python -m applications.remote_control
+```
+
+### 访问控制界面
+
+打开手机/电脑浏览器，访问：
+```
+http://<robot-ip>:5000
+```
+
+界面包含：
+- **实时视频流**（摄像头画面）
+- **虚拟摇杆**（左侧控制底盘移动）
+- **紧急停止按钮**（红色，触发后锁定底盘）
+- **归位按钮**（蓝色，解锁紧急停止）
+
+## 网页遥控端功能
+
+### 视频流显示
+- 自动连接 VisionService 获取摄像头画面
+- 支持 MJPEG 实时流播放
+- 断线自动检测，显示离线状态
+
+### 紧急停止机制
+- 点击**紧急停止** → 底盘立即停止，进入**锁定状态**
+- 锁定期间：
+  - 摇杆操作被忽略
+  - 底盘拒绝所有运动命令
+  - 按钮显示"已锁定"
+- 点击**归位** → 解除锁定，恢复正常控制
+
+### 状态指示
+- **WebSocket 状态** - 连接状态指示灯
+- **仲裁器状态** - 底盘服务连接状态
+- **视频状态** - LIVE / OFFLINE
+- **FPS 显示** - 摇杆指令发送频率
 
 ## 配置
 
-todo.
+所有配置集中在 `software/src/configs/config.py`：
+
+```python
+@dataclass
+class ChassisConfig:
+    serial_port: str = "COM3"        # Windows: COM3, Linux: /dev/ttyUSB0
+    baudrate: int = 1000000
+    service_addr: str = "tcp://127.0.0.1:5556"
+
+@dataclass
+class CameraConfig:
+    device_id: int = 0               # 摄像头设备 ID
+    width: int = 640
+    height: int = 480
+    fps: int = 30
+
+@dataclass
+class ZMQConfig:
+    vision_pub_addr: str = "tcp://*:5560"
+```
 
 ## 开发规范
 
-todo.
+### 启动服务模块
+
+```python
+# 底盘服务
+python -m services.motion_service.chassis_service [--port COM3]
+
+# 视觉服务  
+python -m services.vision_service [--display]
+
+# Web 控制端
+python -m applications.remote_control [--host 0.0.0.0] [--port 5000]
+```
+
+### 订阅图像流
+
+```python
+from services.vision_service import VisionSubscriber
+import cv2
+
+sub = VisionSubscriber("tcp://localhost:5560")
+frame_id, frame = sub.read_frame()  # 读取单帧
+
+# 或持续读取
+sub.read_loop(callback=process_frame)
+```
+
+### 消息格式
+
+底盘控制命令：
+```python
+{
+    "source": "web",        # 控制源: web/voice/auto/emergency/home
+    "vx": 0.5,              # 线速度 X (m/s)
+    "vy": 0.0,              # 线速度 Y (m/s)
+    "vz": 0.3,              # 角速度 Z (rad/s)
+    "priority": 1           # 优先级: 1=web, 2=voice, 3=auto, 4=emergency
+}
+```
 
 ## 扩展
 
-可以在后续迭代中添加 MQTT 桥接、多机器人协同、SLAM 等特性。
+可在后续迭代中添加：
+- **MQTT 桥接** - 云端远程控制
+- **多机器人协同** - 分布式任务
+- **SLAM 导航** - 自主建图与定位
+- **语音交互** - 集成大语言模型
+- **模仿学习** - 兼容 LeRobot 框架
 
 ---
 
-*Generated on 2026-03-08 by HomeBot development team.*
+*Last updated: 2026-03-08*

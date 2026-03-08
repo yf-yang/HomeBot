@@ -1,3 +1,5 @@
+AGENTS.md
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -67,3 +69,7 @@ configs/*.json
 
 # misc
 *.pyc
+
+# solidworks模型文件
+*.SLDPRT
+*.SLDASM

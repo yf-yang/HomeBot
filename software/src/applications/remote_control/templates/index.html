@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
+    <title>HomeBot 遥控</title>
+    <!-- Socket.IO客户端 -->
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <!-- nippleJS 虚拟摇杆 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/nipplejs/0.10.1/nipplejs.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #fff;
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        /* 顶部状态栏 */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 15px;
+            background: rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(10px);
+            flex-shrink: 0;
+        }
+        
+        .status-group {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .status {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+        }
+        
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #ff4444;
+            transition: all 0.3s;
+        }
+        
+        .status-dot.connected {
+            background: #00ff88;
+            box-shadow: 0 0 8px #00ff88;
+        }
+        
+        .status-dot.warning {
+            background: #ffaa00;
+            box-shadow: 0 0 8px #ffaa00;
+        }
+        
+        .status-label {
+            color: #888;
+        }
+        
+        .title {
+            font-size: 18px;
+            font-weight: 600;
+            letter-spacing: 1px;
+        }
+        
+        /* 主内容区域 */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        
+        /* 视频区域 */
+        .video-section {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.2);
+            position: relative;
+            min-height: 0;
+        }
+        
+        .video-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            max-width: 640px;
+            max-height: 480px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .video-feed {
+            max-width: 100%;
+            max-height: 100%;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+            object-fit: contain;
+        }
+        
+        .video-placeholder {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: #666;
+            font-size: 14px;
+        }
+        
+        .video-placeholder::before {
+            content: "📷";
+            font-size: 48px;
+            margin-bottom: 10px;
+            opacity: 0.5;
+        }
+        
+        .video-status {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            padding: 4px 8px;
+            background: rgba(0, 0, 0, 0.6);
+            border-radius: 4px;
+            font-size: 11px;
+            color: #00ff88;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        .video-status::before {
+            content: "";
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #00ff88;
+            animation: pulse 1.5s infinite;
+        }
+        
+        .video-status.offline {
+            color: #ff4444;
+        }
+        
+        .video-status.offline::before {
+            background: #ff4444;
+            animation: none;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.8; transform: scale(1.05); }
+        }
+        
+        /* 控制区域 */
+        .control-section {
+            flex-shrink: 0;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        /* 主控制区域 */
+        .control-area {
+            display: flex;
+            position: relative;
+            padding: 15px 20px;
+            gap: 20px;
+        }
+        
+        /* 摇杆区域 */
+        .joystick-zone {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            min-height: 140px;
+        }
+        
+        .joystick-container {
+            width: 120px;
+            height: 120px;
+            position: relative;
+        }
+        
+        /* 摇杆标签 */
+        .joystick-label {
+            position: absolute;
+            top: -25px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 12px;
+            color: #888;
+            white-space: nowrap;
+        }
+        
+        /* 数据展示 */
+        .data-display {
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.5);
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 11px;
+            text-align: center;
+            min-width: 160px;
+        }
+        
+        .data-row {
+            display: flex;
+            justify-content: space-between;
+            margin: 2px 0;
+        }
+        
+        .data-label {
+            color: #888;
+        }
+        
+        .data-value {
+            color: #00ff88;
+            font-weight: bold;
+        }
+        
+        /* 底部按钮 */
+        .footer {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            padding: 15px 20px;
+            background: rgba(0, 0, 0, 0.3);
+        }
+        
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 50px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .btn-emergency {
+            background: linear-gradient(135deg, #ff4444, #cc0000);
+            color: white;
+            box-shadow: 0 4px 15px rgba(255, 68, 68, 0.4);
+        }
+        
+        .btn-emergency:active {
+            transform: scale(0.95);
+            box-shadow: 0 2px 10px rgba(255, 68, 68, 0.4);
+        }
+        
+        .btn-home {
+            background: linear-gradient(135deg, #4444ff, #0000cc);
+            color: white;
+            box-shadow: 0 4px 15px rgba(68, 68, 255, 0.4);
+        }
+        
+        .btn-home:active {
+            transform: scale(0.95);
+        }
+        
+        /* 消息提示 */
+        .toast {
+            position: fixed;
+            top: 60px;
+            left: 50%;
+            transform: translateX(-50%) translateY(-100px);
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 25px;
+            font-size: 14px;
+            opacity: 0;
+            transition: all 0.3s;
+            z-index: 1000;
+        }
+        
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
+        
+        .toast.error {
+            background: rgba(255, 68, 68, 0.9);
+        }
+        
+        .toast.success {
+            background: rgba(0, 255, 136, 0.9);
+            color: #000;
+        }
+        
+        .toast.warning {
+            background: rgba(255, 170, 0, 0.9);
+            color: #000;
+        }
+        
+        /* 使用说明 */
+        .instructions {
+            text-align: center;
+            font-size: 11px;
+            color: #666;
+            padding: 5px;
+        }
+        
+        /* 响应式调整 */
+        @media (max-width: 480px) {
+            .joystick-container {
+                width: 100px;
+                height: 100px;
+            }
+            
+            .btn {
+                padding: 10px 20px;
+                font-size: 13px;
+            }
+            
+            .status-group {
+                gap: 10px;
+            }
+            
+            .status {
+                font-size: 10px;
+            }
+            
+            .control-area {
+                padding: 10px 15px;
+            }
+        }
+        
+        @media (min-width: 768px) {
+            .main-content {
+                flex-direction: row;
+            }
+            
+            .video-section {
+                flex: 1;
+                padding: 20px;
+            }
+            
+            .control-section {
+                width: 400px;
+                border-left: 1px solid rgba(255, 255, 255, 0.1);
+            }
+            
+            .control-area {
+                flex-direction: column;
+                padding: 20px;
+                gap: 30px;
+            }
+            
+            .joystick-zone {
+                min-height: 180px;
+            }
+            
+            .joystick-container {
+                width: 150px;
+                height: 150px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 顶部状态栏 -->
+    <div class="header">
+        <div class="status-group">
+            <div class="status">
+                <div class="status-dot" id="wsStatusDot"></div>
+                <span class="status-label">WebSocket</span>
+            </div>
+            <div class="status">
+                <div class="status-dot" id="arbiterStatusDot"></div>
+                <span class="status-label">仲裁器</span>
+            </div>
+        </div>
+        <div class="title">HomeBot</div>
+        <div class="status" style="font-size: 12px; color: #888;">
+            <span id="fps">-- FPS</span>
+        </div>
+    </div>
+    
+    <!-- 主内容区域 -->
+    <div class="main-content">
+        <!-- 视频显示区域 -->
+        <div class="video-section">
+            <div class="video-container">
+                <img class="video-feed" id="videoFeed" src="{{ url_for('video_feed') }}" alt="摄像头画面">
+                <div class="video-status" id="videoStatus">● LIVE</div>
+            </div>
+        </div>
+        
+        <!-- 控制区域 -->
+        <div class="control-section">
+            <div class="control-area">
+                <!-- 数据展示 -->
+                <div class="data-display">
+                    <div class="data-row">
+                        <span class="data-label">底盘 X:</span>
+                        <span class="data-value" id="vx">0.00</span>
+                    </div>
+                    <div class="data-row">
+                        <span class="data-label">旋转 Z:</span>
+                        <span class="data-value" id="vz">0.00</span>
+                    </div>
+                </div>
+                
+                <!-- 左手摇杆 - 底盘控制 -->
+                <div class="joystick-zone">
+                    <div class="joystick-container" id="leftJoystick">
+                        <div class="joystick-label">底盘移动</div>
+                    </div>
+                </div>
+                
+                <!-- 右手摇杆 - 机械臂控制 -->
+                <div class="joystick-zone">
+                    <div class="joystick-container" id="rightJoystick">
+                        <div class="joystick-label">机械臂 (开发中)</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 使用说明 -->
+            <div class="instructions">
+                左手控制机器人移动 · 右手控制机械臂
+            </div>
+            
+            <!-- 底部按钮 -->
+            <div class="footer">
+                <button class="btn btn-emergency" id="btnEmergency">紧急停止</button>
+                <button class="btn btn-home" id="btnHome">归位</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 消息提示 -->
+    <div class="toast" id="toast"></div>
+    
+    <!-- 应用脚本 -->
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>

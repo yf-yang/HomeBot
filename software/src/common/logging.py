@@ -7,7 +7,7 @@ def get_logger(name: str) -> logging.Logger:
     level = os.environ.get("HOMEBOT_LOG_LEVEL")
     if level is None:
         try:
-            from common.config import Config
+            from configs.config import Config
             level = Config().logging.level
         except Exception:
             level = "DEBUG"
