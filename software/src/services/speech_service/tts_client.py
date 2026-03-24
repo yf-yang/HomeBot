@@ -12,6 +12,7 @@ import websockets
 
 from common.logging import get_logger
 from configs.config import get_config
+from configs.secrets import require_secrets
 from services.speech_service.protocols import (
     EventType,
     MsgType,
@@ -32,6 +33,9 @@ class VolcanoTTSClient:
     
     def __init__(self):
         """初始化 TTS 客户端"""
+        # 确保密钥已配置
+        require_secrets("tts")
+        
         tts_config = get_config().tts
         self.appid = tts_config.appid
         self.access_token = tts_config.access_token

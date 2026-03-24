@@ -232,6 +232,58 @@ config = get_config()
 print(config.chassis.serial_port)
 ```
 
+### API 密钥管理
+
+**重要：API 密钥不存储在代码中！**
+
+使用环境变量或 `.env.local` 文件管理敏感配置：
+
+1. **复制模板文件**：
+   ```bash
+   cd software
+   cp .env.example .env.local
+   ```
+
+2. **编辑 `.env.local`**，填入你的密钥：
+   ```ini
+   # 火山引擎 TTS
+   VOLCANO_APPID=your_appid
+   VOLCANO_ACCESS_TOKEN=your_token
+   
+   # 火山Ark LLM
+   ARK_API_KEY=your_api_key
+   ARK_MODEL_ID=ep-your_model_id
+   ```
+
+3. **验证配置**：
+   ```bash
+   python tools/check_config.py
+   ```
+
+**支持的密钥类型**：
+| 服务 | 环境变量 | 说明 |
+|------|---------|------|
+| 火山引擎 TTS | `VOLCANO_APPID`, `VOLCANO_ACCESS_TOKEN` | 语音合成 |
+| 火山Ark LLM | `ARK_API_KEY`, `ARK_MODEL_ID` | 大语言模型（语音交互）|
+| 图片理解 | `VISION_API_KEY` | 视觉分析（可选） |
+
+**在代码中使用**：
+```python
+from configs import get_config, require_secrets
+
+# 强制检查密钥（未配置时自动退出并提示）
+require_secrets("tts")
+
+# 获取配置
+config = get_config()
+api_key = config.llm.api_key  # 自动从环境变量加载
+```
+
+**安全注意事项**：
+- `.env.local` 已添加到 `.gitignore`，不会提交到版本控制
+- 永远不要硬编码密钥到代码中
+- 定期轮换 API Key
+
 ## 构建与运行
 
 ### 安装依赖

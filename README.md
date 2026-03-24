@@ -8,6 +8,37 @@ HomeBot 是一个面向家庭场景的轻量级机器人项目，采用 **分层
 
 <img width="400" height="500" alt="效果图" src="docs/images/效果图.png" />
 
+## 更新记录
+
+### 2025-03-24 
+
+**新增功能：**
+- **新增语音交互系统**，基于本地语音识别 + 云端大模型 + 语音合成，实现自然语言控制机器人
+  - **语音唤醒与识别**：本地部署 sherpa-onnx 唤醒词检测 + 流式 ASR，支持自定义唤醒词（如"你好小白"）
+  - **大模型对话**：集成 `Doubao-seed-2.0-mini` API，支持多轮对话和工具调用
+  - **MCP 工具集成**：语音可调用底盘运动、机械臂控制、视觉理解等工具
+
+  - **语音合成**：集成火山引擎 TTS，支持 Seed-TTS 2.0 高质量音色
+  - **一键启动**：`python start_speech_service.py` 自动启动 Wakeup+ASR 服务和语音交互应用
+  - 详见 [语音交互使用指南](docs/语音交互使用指南.md) 和 [自定义唤醒词配置指南](docs/自定义唤醒词配置指南.md)
+
+- **新增视觉理解功能**，机器人可"看到并理解"眼前画面
+  - 订阅 VisionService 获取最新图像帧
+  - 调用`Doubao-seed-2.0-mini`模型分析画面内容
+  - 可被语音应用通过 MCP 调用，回答"你看到了什么"等问题
+  - 独立运行：`python -m applications.vision_understanding`
+
+- **新增安全的 API 密钥管理机制**，支持从环境变量或 `.env.local` 文件加载敏感配置 详见 [API 密钥配置指南](docs/API密钥配置指南.md)
+- **重构运动学模块**，将 `ArmKinematics` 类整合至 `/hal/arm/Kinematics.py`，统一网页遥控端和语音交互端的运动学计算
+- 新增**电池状态监测**功能，通过舵机总线读取电源电压
+  - HAL 层新增 `BatteryDriver`，支持电压/温度读取、电量百分比计算
+  - 底盘服务集成电池状态发布（ZeroMQ PUB）
+  - 新增消息类型 `sensor.battery`，包含电压、电量、状态、温度等字段
+  - 支持低电量警告和电压阈值配置
+
+
+
+
 ## 系统架构
 
 <img src="docs/images/整体架构.jpg">

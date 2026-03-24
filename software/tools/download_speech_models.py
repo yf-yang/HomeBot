@@ -51,6 +51,7 @@ MODELS = {
             "encoder-epoch-13-avg-2-chunk-16-left-64.int8.onnx",
             "decoder-epoch-13-avg-2-chunk-16-left-64.onnx",
             "joiner-epoch-13-avg-2-chunk-16-left-64.int8.onnx",
+            "en.phone",
             "tokens.txt"
         ]
     }

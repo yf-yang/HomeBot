@@ -47,8 +47,8 @@ class SpeechInteractionApp:
         # 对话管理器
         self.dialogue_manager = DialogueManager()
         
-        # TTS 客户端（本地直接调用）
-        self.tts_engine = VoiceEngine()
+        # TTS 客户端（本地直接调用，使用 tts_only 模式避免重复加载唤醒/ASR模型）
+        self.tts_engine = VoiceEngine(mode="tts_only")
         
         self.is_running = False
         self.processed_sessions = set()  # 防止重复处理
@@ -68,6 +68,15 @@ class SpeechInteractionApp:
         logger.info("=" * 50)
         logger.info("语音交互应用启动")
         logger.info(f"订阅地址: {self.sub_socket.get_string(zmq.LAST_ENDPOINT)}")
+        
+        # 启动时预初始化 MCP 客户端（避免第一次对话时才初始化）
+        logger.info("正在初始化 MCP 客户端...")
+        try:
+            await self.dialogue_manager._initialize_mcp_client()
+            logger.info("MCP 客户端初始化完成")
+        except Exception as e:
+            logger.error(f"MCP 客户端初始化失败: {e}")
+        
         logger.info("等待语音输入...")
         logger.info("=" * 50)
         

@@ -23,16 +23,27 @@ logger = get_logger(__name__)
 
 
 class VoiceEngine:
-    """语音引擎类"""
+    """语音引擎类
     
-    def __init__(self):
+    支持三种模式:
+    - full: 完整模式（唤醒 + ASR + TTS）
+    - tts_only: 仅 TTS 模式（用于语音交互应用，避免重复加载模型）
+    """
+    
+    def __init__(self, mode: str = "full"):
+        """初始化语音引擎
+        
+        Args:
+            mode: 运行模式，"full" 或 "tts_only"
+        """
         config = get_config()
         self.speech_config = config.speech
         self.tts_config = config.tts
+        self.mode = mode
         
         self.is_initialized = False
         
-        # 唤醒词检测相关
+        # 唤醒词检测相关（仅 full 模式）
         self.wakeup_keyword = self.speech_config.wakeup_keyword
         self.sample_rate = self.speech_config.sample_rate
         self.block_size = 1600  # 100ms
@@ -40,17 +51,17 @@ class VoiceEngine:
         self.wakeup_detector = None
         self.wakeup_stream = None
         
-        # ASR相关
+        # ASR相关（仅 full 模式）
         self.asr_recognizer = None
         self.asr_stream = None
         self.listen_timeout = self.speech_config.listen_timeout
         
-        # 状态管理
+        # 状态管理（仅 full 模式）
         self.in_listening_mode = False
         self.last_speech_time = 0
         self.current_text = ""
         
-        # 麦克风相关
+        # 麦克风相关（仅 full 模式）
         self.mic_index = self.speech_config.mic_index
         self.mic_stream = None
         self.samples_per_read = int(0.1 * self.sample_rate)  # 0.1秒
@@ -69,7 +80,23 @@ class VoiceEngine:
             blocksize=2048
         )
         
-        self._initialize()
+        if mode == "tts_only":
+            self._initialize_tts_only()
+        else:
+            self._initialize()
+    
+    def _initialize_tts_only(self):
+        """仅初始化 TTS 相关资源（轻量级模式）"""
+        logger.info("语音引擎以 TTS-only 模式初始化")
+        # 仅初始化音频播放流，不加载唤醒和 ASR 模型
+        try:
+            self.audio_stream.start()
+            self.audio_stream.stop()
+            logger.info("TTS-only 模式初始化成功")
+            self.is_initialized = True
+        except Exception as e:
+            logger.error(f"TTS-only 模式初始化失败: {e}")
+            raise
     
     def _initialize(self):
         """初始化语音引擎"""
