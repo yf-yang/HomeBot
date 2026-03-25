@@ -233,21 +233,9 @@ HomeBot 提供基于 **YOLO26** 的实时人体跟随功能，支持视觉伺服
 | **控制算法** | 视觉伺服 (Visual Servoing) |
 | **控制优先级** | auto=3（可被 emergency 抢占）|
 
-### 快速开始
+### 快速体验
 
-```bash
-# 1. 启动底盘服务
-cd software/src
-python -m services.motion_service.chassis_service
-
-# 2. 启动视觉服务
-cd software/src
-python -m services.vision_service
-
-# 3. 启动人体跟随（终端 3）
-cd software
-python start_human_follow.py --display
-```
+启动系统服务后，在网页端点击人体跟随按钮即可，启动大约需要5-10秒钟（加载模型）。
 
 ### 运行模式
 
