@@ -20,12 +20,6 @@
 
 import os
 
-<<<<<<< HEAD
-# 视频流ZeroMQ PUB端口 - 默认5560
-CHASSIS_PORT = 5556
-ARM_PORT = 5557
-VIDEO_PORT = 5560
-=======
 # 机器人IP地址 - 可通过 HOMEBOT_IP 环境变量覆盖
 ROBOT_IP = os.getenv("HOMEBOT_IP", "192.168.1.13")
 
@@ -33,7 +27,6 @@ ROBOT_IP = os.getenv("HOMEBOT_IP", "192.168.1.13")
 CHASSIS_PORT = int(os.getenv("HOMEBOT_CHASSIS_PORT", "5556"))
 ARM_PORT = int(os.getenv("HOMEBOT_ARM_PORT", "5557"))
 VIDEO_PORT = int(os.getenv("HOMEBOT_VIDEO_PORT", "5560"))
->>>>>>> f737069 (homebot-skill更新)
 
 # 捕获超时时间（秒）
 CAPTURE_TIMEOUT = float(os.getenv("HOMEBOT_CAPTURE_TIMEOUT", "10.0"))

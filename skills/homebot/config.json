@@ -423,9 +423,9 @@
       "servers": {
         "homebot": {
           "enabled": true,
-          "command": "C:\\Users\\Administrator\\.picoclaw\\workspace\\.venv\\Scripts\\python.exe",
+          "command": "{{skill_path}}\\homebot\\venv\\Scripts\\python.exe",
           "args": [
-            "C:\\Users\\Administrator\\.picoclaw\\workspace\\skills\\homebot\\mcp_homebot_server.py"
+            "{{skill_path}}\\homebot\\mcp_homebot_server.py"
           ]
         }
       }
