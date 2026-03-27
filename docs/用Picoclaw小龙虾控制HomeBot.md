@@ -20,9 +20,9 @@ Picoclaw 通过技能系统扩展功能，HomeBot 提供了一个统一的控制
 
 | 技能名称 | 功能说明 |
 |---------|---------|
-| **homebot** | 集成底盘控制、机械臂控制、视觉查询、姿态动作于一体 |
+| **homebot-skill** | 集成底盘控制、机械臂控制、视觉查询、姿态动作于一体 |
 
-技能文件位于本仓库的 [`skills/homebot/`](https://github.com/choco-robot/homebot/tree/main/skills/homebot) 目录下。
+技能文件位于本仓库的 [`skills/homebot-skill/`](https://github.com/choco-robot/homebot/tree/main/skills/homebot-skill) 目录下。
 
 ### 安装方式
 
@@ -35,7 +35,7 @@ cd homebot/skills
 2. 将技能目录复制到 Picoclaw 的技能目录中：
 ```bash
 # 假设 Picoclaw 技能目录为 ~/.picoclaw/skills
-cp -r homebot ~/.picoclaw/skills/
+cp -r homebot-skill ~/.picoclaw/skills/
 ```
 
 3. 重启 Picoclaw 或刷新技能列表即可使用。
@@ -50,7 +50,7 @@ cp -r homebot ~/.picoclaw/skills/
 
 ### 2. 配置机器人 IP
 
-编辑 `skills/homebot/scripts/robot_config.py`：
+编辑 `skills/homebot-skill/scripts/robot_config.py`：
 
 ```python
 ROBOT_IP = "192.168.1.13"  # 修改为你的机器人IP
@@ -72,7 +72,7 @@ HomeBot 技能内置 MCP 服务器，配置后 Picoclaw 启动时会自动加载
           "enabled": true,
           "command": "python",
           "args": [
-            "{{skill_path}}/mcp_homebot_server.py"
+            "{{skill_path}}/homebot-skill/mcp_homebot_server.py"
           ]
         }
       }
@@ -82,7 +82,7 @@ HomeBot 技能内置 MCP 服务器，配置后 Picoclaw 启动时会自动加载
 ```
 
 **配置说明：**
-- `{{skill_path}}` 是 Picoclaw 的魔法变量，会自动替换为技能实际安装路径
+- `{{skill_path}}` 替换为技能实际安装路径
 - `command` 可以是 `python`（需在 PATH 中）或 Python 解释器的完整路径
 - `args` 是数组格式，包含 MCP 服务器脚本路径
 - 环境变量（如 `HOMEBOT_IP`、`ARK_API_KEY`）需在启动 Picoclaw 前设置
@@ -190,7 +190,7 @@ python scripts/dance.py
 
 ```python
 import sys
-sys.path.insert(0, 'skills/homebot/scripts')
+sys.path.insert(0, 'skills/homebot-skill/scripts')
 
 from arm_control import HomeBotArmController
 from robot_config import ROBOT_IP, ARM_PORT
@@ -228,7 +228,7 @@ arm.close()
 
 ```python
 import sys
-sys.path.insert(0, 'skills/homebot/scripts')
+sys.path.insert(0, 'skills/homebot-skill/scripts')
 
 from chassis_control import HomeBotChassisController
 from robot_config import ROBOT_IP, CHASSIS_PORT
@@ -313,7 +313,7 @@ robot.close()
          "enabled": true,
          "command": "python",
          "args": [
-           "{{skill_path}}/mcp_homebot_server.py"
+           "{{skill_path}}/homebot-skill/mcp_homebot_server.py"
          ]
        }
      }
