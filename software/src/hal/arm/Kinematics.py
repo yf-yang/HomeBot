@@ -1,4 +1,6 @@
 import math
+from typing import Optional, Tuple, List, Dict
+
 
 def kinematics(L1, L2, alpha, beta):
     """
@@ -14,6 +16,7 @@ def kinematics(L1, L2, alpha, beta):
     x = L1 * math.cos(alpha_rad) + L2 * math.cos(theta)
     y = L1 * math.sin(alpha_rad) + L2 * math.sin(theta)
     return x, y
+
 
 def inverse_kinematics(L1, L2, target, elbow_up=True):
     """
@@ -66,6 +69,7 @@ def inverse_kinematics(L1, L2, target, elbow_up=True):
     beta_deg = (beta_deg + 180) % 360 - 180
     
     return alpha_deg, beta_deg
+
 
 def inverse_kinematics_all(L1, L2, target):
     """
@@ -296,3 +300,30 @@ if __name__ == "__main__":
     print("\n测试目标点(-50, 120):")
     sol = inverse_kinematics_all(L1, L2, (-50, 120))
     print(f"可行解: {sol}")
+    
+    # 测试3: ArmKinematics 类
+    print("\n" + "="*50)
+    print("ArmKinematics 类测试")
+    print("="*50)
+    
+    kin = ArmKinematics(L1=120.0, L2=100.0)
+    
+    # 正运动学测试
+    shoulder, elbow = 30.0, 45.0
+    r, z = kin.forward_kinematics(shoulder, elbow)
+    print(f"\n正运动学: shoulder={shoulder}°, elbow={elbow}°")
+    print(f"末端位置: r={r:.1f}mm, z={z:.1f}mm")
+    
+    # 逆运动学测试
+    ik_result = kin.inverse_kinematics(r, z)
+    print(f"\n逆运动学: r={r:.1f}mm, z={z:.1f}mm")
+    print(f"解: shoulder={ik_result[0]:.1f}°, elbow={ik_result[1]:.1f}°")
+    
+    # 手腕角度计算
+    wrist = kin.compute_wrist_flex(ik_result[0], ik_result[1], target_orientation=0.0)
+    print(f"手腕角度(保持水平): {wrist:.1f}°")
+    
+    # 可达性测试
+    print(f"\n工作空间半径: {kin.get_workspace_radius()}")
+    print(f"位置 (150, 100) 是否可达: {kin.is_reachable(150, 100)}")
+    print(f"位置 (300, 300) 是否可达: {kin.is_reachable(300, 300)}")
